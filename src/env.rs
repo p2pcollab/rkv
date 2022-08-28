@@ -272,6 +272,10 @@ where
         self.env.info().map_err(|e| e.into())
     }
 
+    pub fn version(&self) -> &str {
+        self.env.version()
+    }
+
     /// Retrieve the load ratio (# of used pages / total pages) about this environment.
     ///
     /// With the formular: (last_page_no - freelist_pages) / total_pages.

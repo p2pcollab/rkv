@@ -323,4 +323,9 @@ impl<'e> BackendEnvironment<'e> for EnvironmentImpl {
         db_filename.push(DEFAULT_DB_FILENAME);
         vec![db_filename]
     }
+
+    fn version(&self) -> &str {
+        let ret: &str = "unknown";
+        ret
+    }
 }

@@ -218,6 +218,10 @@ impl<'e> BackendEnvironment<'e> for EnvironmentImpl {
             .map_err(ErrorImpl::LmdbError)
     }
 
+    fn version(&self) -> &str {
+        self.lmdbenv.version()
+    }
+
     fn begin_ro_txn(&'e self) -> Result<Self::RoTransaction, Self::Error> {
         self.lmdbenv
             .begin_ro_txn()

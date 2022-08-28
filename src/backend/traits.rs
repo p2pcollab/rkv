@@ -117,6 +117,8 @@ pub trait BackendEnvironment<'e>: Debug {
 
     fn info(&self) -> Result<Self::Info, Self::Error>;
 
+    fn version(&self) -> &str;
+
     fn freelist(&self) -> Result<usize, Self::Error>;
 
     fn load_ratio(&self) -> Result<Option<f32>, Self::Error>;
