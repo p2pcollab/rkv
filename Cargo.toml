@@ -4,6 +4,7 @@ authors = [
   "Nan Jiang <najiang@mozilla.com>",
   "Myk Melez <myk@mykzilla.org>",
   "Victor Porof <vporof@mozilla.com>",
+  "NikoPLP <info@parlepeuple.fr>"
 ]
 categories = ["database"]
 description = "A simple, humane, typed key-value storage solution, with encryption at rest"
@@ -13,7 +14,7 @@ exclude = ["/tests/envs/*"]
 homepage = "https://github.com/mozilla/rkv"
 keywords = ["lmdb", "database", "storage"]
 license = "Apache-2.0"
-name = "rkv-lofire"
+name = "rkv"
 readme = "README.md"
 repository = "https://github.com/nikoPLP/rkv"
 version = "0.18.0"

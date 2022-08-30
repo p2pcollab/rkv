@@ -190,6 +190,7 @@ impl Manager<SafeModeEnvironment> {
     }
 }
 
+#[allow(unused_imports)]
 #[cfg(test)]
 mod tests {
     use super::*;

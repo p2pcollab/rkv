@@ -82,6 +82,22 @@ fn test_open() {
 }
 
 #[test]
+fn test_open_with_encryption() {
+    let root = Builder::new()
+        .prefix("test_open")
+        .tempdir()
+        .expect("tempdir");
+    println!("Root path: {:?}", root.path());
+    fs::create_dir_all(root.path()).expect("dir created");
+    assert!(root.path().is_dir());
+
+    let key: [u8; 32] = [0; 32];
+    let k = Rkv::with_encryption_key_and_mapsize::<Lmdb>(root.path(), key, 2 * 1024 * 1024 * 1024)
+        .expect("new succeeded");
+    check_rkv(&k);
+}
+
+#[test]
 fn test_open_from_builder() {
     let root = Builder::new()
         .prefix("test_open_from_builder")

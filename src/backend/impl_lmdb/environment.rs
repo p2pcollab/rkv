@@ -24,6 +24,8 @@ use crate::backend::traits::{
     BackendRoCursorTransaction, BackendStat,
 };
 
+use crate::env::Key;
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub struct EnvironmentBuilderImpl {
     builder: lmdb::EnvironmentBuilder,
@@ -78,6 +80,11 @@ impl<'b> BackendEnvironmentBuilder<'b> for EnvironmentBuilderImpl {
 
     fn set_map_size(&mut self, size: usize) -> &mut Self {
         self.builder.set_map_size(size);
+        self
+    }
+
+    fn set_enc_key(&mut self, key: Key) -> &mut Self {
+        self.builder.set_enc_key(key);
         self
     }
 

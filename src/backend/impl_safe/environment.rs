@@ -25,6 +25,7 @@ use super::{
     RoTransactionImpl, RwTransactionImpl, StatImpl,
 };
 use crate::backend::traits::{BackendEnvironment, BackendEnvironmentBuilder};
+use crate::env::Key;
 
 const DEFAULT_DB_FILENAME: &str = "data.safe.bin";
 
@@ -72,6 +73,12 @@ impl<'b> BackendEnvironmentBuilder<'b> for EnvironmentBuilderImpl {
 
     fn set_max_dbs(&mut self, max_dbs: u32) -> &mut Self {
         self.max_dbs = Some(max_dbs as usize);
+        self
+    }
+
+    fn set_enc_key(&mut self, _key: Key) -> &mut Self {
+        // NOOP
+        warn!("set_enc_key is ignored by this storage backend.");
         self
     }
 

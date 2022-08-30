@@ -14,6 +14,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+pub type Key = [u8; 32];
+
 #[cfg(any(feature = "db-dup-sort", feature = "db-int-key"))]
 use crate::backend::{BackendDatabaseFlags, DatabaseFlags};
 use crate::{
@@ -74,6 +76,24 @@ where
     {
         let mut builder = B::new();
         builder.set_max_dbs(max_dbs);
+
+        // Future: set flags, maximum size, etc. here if necessary.
+        Rkv::from_builder(path, builder)
+    }
+
+    /// Return a new Rkv environment that supports the specified number of open databases.
+    pub fn with_encryption_key_and_mapsize<B>(
+        path: &Path,
+        key: Key,
+        size: usize,
+    ) -> Result<Rkv<E>, StoreError>
+    where
+        B: BackendEnvironmentBuilder<'e, Environment = E>,
+    {
+        let mut builder = B::new();
+        builder.set_enc_key(key);
+        builder.set_map_size(size);
+        builder.set_max_dbs(DEFAULT_MAX_DBS);
 
         // Future: set flags, maximum size, etc. here if necessary.
         Rkv::from_builder(path, builder)
