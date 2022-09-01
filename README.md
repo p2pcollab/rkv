@@ -1,4 +1,4 @@
-# rkv-lofire
+# rkv-crypto
 
 This repo is a fork of [mozilla/rkv](https://github.com/mozilla/rkv) that enables encryption of data at rest in LMDB.
 
@@ -6,7 +6,7 @@ This repo is a fork of [mozilla/rkv](https://github.com/mozilla/rkv) that enable
 [![Documentation](https://docs.rs/rkv/badge.svg)](https://docs.rs/rkv/)
 [![Crate](https://img.shields.io/crates/v/rkv.svg)](https://crates.io/crates/rkv)
 
-The [rkv Rust crate](https://crates.io/crates/rkv-lofire) is a simple, humane, typed key-value storage solution. It supports multiple backend engines with varying guarantees, such as [LMDB](http://www.lmdb.tech/doc/) for performance, or "SafeMode" for reliability.
+The [rkv Rust crate](https://crates.io/crates/rkv-crypto) is a simple, humane, typed key-value storage solution. It supports multiple backend engines with varying guarantees, such as [LMDB](http://www.lmdb.tech/doc/) for performance, or "SafeMode" for reliability.
 
 ## ⚠️ Warning ⚠️
 
