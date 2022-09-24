@@ -11,7 +11,7 @@
 use crate::{
     backend::{
         BackendDatabase, BackendRoCursor, BackendRoCursorTransaction, BackendRoTransaction,
-        BackendRwCursorTransaction, BackendRwTransaction,
+        BackendRwCursorTransaction, BackendRwTransaction, BackendStat,
     },
     error::StoreError,
     helpers::read_transform,
@@ -24,12 +24,15 @@ pub struct Writer<T>(T);
 pub trait Readable<'r> {
     type Database: BackendDatabase;
     type RoCursor: BackendRoCursor<'r>;
+    type Stat: BackendStat;
 
     fn get<K>(&'r self, db: &Self::Database, k: &K) -> Result<Option<Value<'r>>, StoreError>
     where
         K: AsRef<[u8]>;
 
     fn open_ro_cursor(&'r self, db: &Self::Database) -> Result<Self::RoCursor, StoreError>;
+
+    fn stat(&'r self, db: &Self::Database) -> Result<Self::Stat, StoreError>;
 }
 
 impl<'r, T> Readable<'r> for Reader<T>
@@ -38,6 +41,7 @@ where
 {
     type Database = T::Database;
     type RoCursor = T::RoCursor;
+    type Stat = T::Stat;
 
     fn get<K>(&'r self, db: &T::Database, k: &K) -> Result<Option<Value<'r>>, StoreError>
     where
@@ -52,6 +56,10 @@ where
 
     fn open_ro_cursor(&'r self, db: &T::Database) -> Result<T::RoCursor, StoreError> {
         self.0.open_ro_cursor(db).map_err(|e| e.into())
+    }
+
+    fn stat(&'r self, db: &Self::Database) -> Result<Self::Stat, StoreError> {
+        self.0.stat(db).map_err(|e| e.into())
     }
 }
 
@@ -76,6 +84,7 @@ where
 {
     type Database = T::Database;
     type RoCursor = T::RoCursor;
+    type Stat = T::Stat;
 
     fn get<K>(&'r self, db: &T::Database, k: &K) -> Result<Option<Value<'r>>, StoreError>
     where
@@ -90,6 +99,10 @@ where
 
     fn open_ro_cursor(&'r self, db: &T::Database) -> Result<T::RoCursor, StoreError> {
         self.0.open_ro_cursor(db).map_err(|e| e.into())
+    }
+
+    fn stat(&'r self, db: &Self::Database) -> Result<Self::Stat, StoreError> {
+        self.0.stat(db).map_err(|e| e.into())
     }
 }
 

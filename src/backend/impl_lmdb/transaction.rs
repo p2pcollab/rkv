@@ -10,7 +10,7 @@
 
 use lmdb::Transaction;
 
-use super::{DatabaseImpl, ErrorImpl, RoCursorImpl, WriteFlagsImpl};
+use super::{DatabaseImpl, ErrorImpl, RoCursorImpl, StatImpl, WriteFlagsImpl};
 use crate::backend::traits::{
     BackendRoCursorTransaction, BackendRoTransaction, BackendRwCursorTransaction,
     BackendRwTransaction,
@@ -22,6 +22,7 @@ pub struct RoTransactionImpl<'t>(pub(crate) lmdb::RoTransaction<'t>);
 impl<'t> BackendRoTransaction for RoTransactionImpl<'t> {
     type Database = DatabaseImpl;
     type Error = ErrorImpl;
+    type Stat = StatImpl;
 
     fn get(&self, db: &Self::Database, key: &[u8]) -> Result<&[u8], Self::Error> {
         self.0.get(db.0, &key).map_err(ErrorImpl::LmdbError)
@@ -29,6 +30,14 @@ impl<'t> BackendRoTransaction for RoTransactionImpl<'t> {
 
     fn abort(self) {
         self.0.abort()
+    }
+
+    fn stat(&self, db: &Self::Database) -> Result<Self::Stat, Self::Error> {
+        //Err(ErrorImpl::LmdbError(lmdb::Error::Invalid))
+        self.0
+            .stat(db.0)
+            .map(StatImpl)
+            .map_err(ErrorImpl::LmdbError)
     }
 }
 
@@ -50,9 +59,18 @@ impl<'t> BackendRwTransaction for RwTransactionImpl<'t> {
     type Database = DatabaseImpl;
     type Error = ErrorImpl;
     type Flags = WriteFlagsImpl;
+    type Stat = StatImpl;
 
     fn get(&self, db: &Self::Database, key: &[u8]) -> Result<&[u8], Self::Error> {
         self.0.get(db.0, &key).map_err(ErrorImpl::LmdbError)
+    }
+
+    fn stat(&self, db: &Self::Database) -> Result<Self::Stat, Self::Error> {
+        //Err(ErrorImpl::LmdbError(lmdb::Error::Invalid))
+        self.0
+            .stat(db.0)
+            .map(StatImpl)
+            .map_err(ErrorImpl::LmdbError)
     }
 
     fn put(

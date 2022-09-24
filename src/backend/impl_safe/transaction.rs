@@ -12,7 +12,8 @@
 use std::{collections::HashMap, sync::Arc};
 
 use super::{
-    snapshot::Snapshot, DatabaseImpl, EnvironmentImpl, ErrorImpl, RoCursorImpl, WriteFlagsImpl,
+    snapshot::Snapshot, DatabaseImpl, EnvironmentImpl, ErrorImpl, RoCursorImpl, StatImpl,
+    WriteFlagsImpl,
 };
 use crate::backend::traits::{
     BackendRoCursorTransaction, BackendRoTransaction, BackendRwCursorTransaction,
@@ -48,6 +49,7 @@ impl<'t> RoTransactionImpl<'t> {
 impl<'t> BackendRoTransaction for RoTransactionImpl<'t> {
     type Database = DatabaseImpl;
     type Error = ErrorImpl;
+    type Stat = StatImpl;
 
     fn get(&self, db: &Self::Database, key: &[u8]) -> Result<&[u8], Self::Error> {
         let snapshot = self.snapshots.get(db).ok_or(ErrorImpl::DbIsForeignError)?;
@@ -56,6 +58,10 @@ impl<'t> BackendRoTransaction for RoTransactionImpl<'t> {
 
     fn abort(self) {
         // noop
+    }
+
+    fn stat(&self, db: &Self::Database) -> Result<Self::Stat, Self::Error> {
+        Err(ErrorImpl::DbNotFoundError)
     }
 }
 
@@ -98,10 +104,15 @@ impl<'t> BackendRwTransaction for RwTransactionImpl<'t> {
     type Database = DatabaseImpl;
     type Error = ErrorImpl;
     type Flags = WriteFlagsImpl;
+    type Stat = StatImpl;
 
     fn get(&self, db: &Self::Database, key: &[u8]) -> Result<&[u8], Self::Error> {
         let snapshot = self.snapshots.get(db).ok_or(ErrorImpl::DbIsForeignError)?;
         snapshot.get(key).ok_or(ErrorImpl::KeyValuePairNotFound)
+    }
+
+    fn stat(&self, db: &Self::Database) -> Result<Self::Stat, Self::Error> {
+        Err(ErrorImpl::DbNotFoundError)
     }
 
     #[cfg(not(feature = "db-dup-sort"))]

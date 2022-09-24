@@ -134,16 +134,20 @@ pub trait BackendEnvironment<'e>: Debug {
 pub trait BackendRoTransaction: Debug {
     type Error: BackendError;
     type Database: BackendDatabase;
+    type Stat: BackendStat;
 
     fn get(&self, db: &Self::Database, key: &[u8]) -> Result<&[u8], Self::Error>;
 
     fn abort(self);
+
+    fn stat(&self, db: &Self::Database) -> Result<Self::Stat, Self::Error>;
 }
 
 pub trait BackendRwTransaction: Debug {
     type Error: BackendError;
     type Database: BackendDatabase;
     type Flags: BackendWriteFlags;
+    type Stat: BackendStat;
 
     fn get(&self, db: &Self::Database, key: &[u8]) -> Result<&[u8], Self::Error>;
 
@@ -171,6 +175,8 @@ pub trait BackendRwTransaction: Debug {
     fn commit(self) -> Result<(), Self::Error>;
 
     fn abort(self);
+
+    fn stat(&self, db: &Self::Database) -> Result<Self::Stat, Self::Error>;
 }
 
 pub trait BackendRoCursorTransaction<'t>: BackendRoTransaction {
