@@ -11,10 +11,7 @@
 use std::marker::PhantomData;
 
 use crate::{
-    backend::{
-        BackendDatabase, BackendFlags, BackendIter, BackendRoCursor, BackendRwTransaction,
-        BackendStat,
-    },
+    backend::{BackendDatabase, BackendFlags, BackendIter, BackendRoCursor, BackendRwTransaction},
     error::StoreError,
     helpers::read_transform,
     readwrite::{Readable, Writer},
@@ -55,13 +52,6 @@ where
     {
         reader.stat(&self.db)
     }
-
-    // pub fn stat<'r, T>(&self, writer: &mut Writer<T>) -> Result<::Stat, StoreError>
-    // where
-    //     T: BackendRwTransaction<Database = D>,
-    // {
-    //     writer.stat(&self.db)
-    // }
 
     // TODO: flags
     pub fn put<T, K>(&self, writer: &mut Writer<T>, k: K, v: &Value) -> EmptyResult

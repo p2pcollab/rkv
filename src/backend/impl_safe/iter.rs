@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 use super::ErrorImpl;
-use crate::backend::traits::BackendIter;
+use crate::backend::traits::{BackendDupIter, BackendIter};
 
 // FIXME: Use generics instead.
 pub struct IterImpl<'i>(pub(crate) Box<dyn Iterator<Item = (&'i [u8], &'i [u8])> + 'i>);
@@ -20,5 +20,17 @@ impl<'i> BackendIter<'i> for IterImpl<'i> {
     #[allow(clippy::type_complexity)]
     fn next(&mut self) -> Option<Result<(&'i [u8], &'i [u8]), Self::Error>> {
         self.0.next().map(Ok)
+    }
+}
+
+pub struct IterDupImpl<'i>(pub(crate) Box<dyn Iterator<Item = IterImpl<'i>> + 'i>);
+
+impl<'i> BackendDupIter<'i> for IterDupImpl<'i> {
+    type Error = ErrorImpl;
+    type Iter = IterImpl<'i>;
+
+    #[allow(clippy::type_complexity)]
+    fn next(&mut self) -> Option<Result<Self::Iter, Self::Error>> {
+        None
     }
 }

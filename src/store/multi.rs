@@ -11,7 +11,10 @@
 use std::marker::PhantomData;
 
 use crate::{
-    backend::{BackendDatabase, BackendFlags, BackendIter, BackendRoCursor, BackendRwTransaction},
+    backend::{
+        BackendDatabase, BackendDupIter, BackendFlags, BackendIter, BackendRoCursor,
+        BackendRwCursor, BackendRwTransaction,
+    },
     error::StoreError,
     helpers::read_transform,
     readwrite::{Readable, Writer},
@@ -30,12 +33,38 @@ pub struct Iter<'i, I> {
     phantom: PhantomData<&'i ()>,
 }
 
+pub struct DIter<'i, I> {
+    iter: I,
+    phantom: PhantomData<&'i ()>,
+}
+
 impl<D> MultiStore<D>
 where
     D: BackendDatabase,
 {
     pub(crate) fn new(db: D) -> MultiStore<D> {
         MultiStore { db }
+    }
+
+    /// Provides a cursor to all of the keys below the given key
+    /// the values are iterators of the duplicate key's values.
+    pub fn iter_prev_dup_from<'r, K, I, C, R>(
+        &self,
+        reader: &'r R,
+        k: K,
+    ) -> Result<DIter<'r, I>, StoreError>
+    where
+        R: Readable<'r, Database = D, RwCursor = C>,
+        I: BackendDupIter<'r>,
+        C: BackendRwCursor<'r, Iter = I>,
+        K: AsRef<[u8]> + 'r,
+    {
+        let cursor = reader.open_ro_dup_cursor(&self.db)?;
+        let iter = cursor.into_iter_prev_dup_from(k);
+        Ok(DIter {
+            iter,
+            phantom: PhantomData,
+        })
     }
 
     /// Provides a cursor to all of the values for the duplicate entries that match this
@@ -127,6 +156,21 @@ where
                 Ok(val) => Some(Ok((key, val))),
                 Err(err) => Some(Err(err)),
             },
+            Some(Err(err)) => Some(Err(err.into())),
+        }
+    }
+}
+
+impl<'i, I> Iterator for DIter<'i, I>
+where
+    I: BackendDupIter<'i>,
+{
+    type Item = Result<I::Iter, StoreError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.iter.next() {
+            None => None,
+            Some(Ok(val)) => Some(Ok(val)),
             Some(Err(err)) => Some(Err(err.into())),
         }
     }

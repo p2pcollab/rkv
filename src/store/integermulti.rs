@@ -11,12 +11,15 @@
 use std::marker::PhantomData;
 
 use crate::{
-    backend::{BackendDatabase, BackendIter, BackendRoCursor, BackendRwTransaction},
+    backend::{
+        BackendDatabase, BackendDupIter, BackendIter, BackendRoCursor, BackendRwCursor,
+        BackendRwTransaction,
+    },
     error::StoreError,
     readwrite::{Readable, Writer},
     store::{
         keys::{Key, PrimitiveInt},
-        multi::{Iter, MultiStore},
+        multi::{DIter, Iter, MultiStore},
     },
     value::Value,
 };
@@ -39,6 +42,20 @@ where
             inner: MultiStore::new(db),
             phantom: PhantomData,
         }
+    }
+
+    pub fn iter_prev_dup_from<'r, I, C, R>(
+        &self,
+        reader: &'r R,
+        k: K,
+    ) -> Result<DIter<'r, I>, StoreError>
+    where
+        R: Readable<'r, Database = D, RwCursor = C>,
+        I: BackendDupIter<'r>,
+        C: BackendRwCursor<'r, Iter = I>,
+        K: 'r,
+    {
+        self.inner.iter_prev_dup_from(reader, Key::new(&k)?)
     }
 
     pub fn get<'r, R, I, C>(&self, reader: &'r R, k: K) -> Result<Iter<'r, I>, StoreError>
@@ -103,8 +120,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::backend::BackendDatabaseFlags;
     use crate::*;
-
     use std::fs;
 
     use tempfile::Builder;
@@ -259,6 +276,100 @@ mod tests {
                 Value::Str("hello1!")
             );
             assert!(iter.next().is_none());
+        }
+    }
+
+    #[cfg(feature = "lmdb")]
+    #[test]
+    pub fn test_dup_iter_integer() {
+        let path_str = "test-env";
+        let root = Builder::new().prefix(path_str).tempdir().unwrap();
+
+        // we set an encryption key with all zeros... for test purpose only ;)
+        let key: [u8; 32] = [0; 32];
+        {
+            fs::create_dir_all(root.path()).unwrap();
+
+            println!("{}", root.path().to_str().unwrap());
+
+            let mut manager = Manager::<backend::LmdbEnvironment>::singleton()
+                .write()
+                .unwrap();
+            let shared_rkv = manager
+                .get_or_create(root.path(), |path| {
+                    // Rkv::new::<Lmdb>(path) // use this instead to disable encryption
+                    Rkv::with_encryption_key_and_mapsize::<backend::Lmdb>(
+                        path,
+                        key,
+                        2 * 1024 * 1024 * 1024,
+                    )
+                })
+                .unwrap();
+            let env = shared_rkv.read().unwrap();
+
+            println!("LMDB Version: {}", env.version());
+
+            let mut opts = StoreOptions::<backend::LmdbDatabaseFlags>::create();
+            opts.flags.set(DatabaseFlags::DUP_FIXED, true);
+            let expiry_store = env.open_multi_integer("expiry", opts).unwrap();
+
+            let mut writer = env.write().expect("writer");
+            expiry_store
+                .put(&mut writer, 1, &Value::Blob(&[104u8, 101u8, 108u8, 108u8]))
+                .expect("write");
+            expiry_store
+                .put(&mut writer, 1, &Value::Blob(&[104u8, 101u8, 108u8, 108u8]))
+                .expect("write");
+            expiry_store
+                .put(&mut writer, 1, &Value::Blob(&[104u8, 101u8, 108u8, 107u8]))
+                .expect("write");
+            expiry_store
+                .put(&mut writer, 2, &Value::Blob(&[2u8, 2u8, 2u8, 2u8]))
+                .expect("write");
+            expiry_store
+                .put(&mut writer, 2, &Value::Blob(&[2u8, 2u8, 2u8, 3u8]))
+                .expect("write");
+            expiry_store
+                .put(&mut writer, 4, &Value::Blob(&[4u8, 2u8, 2u8, 4u8]))
+                .expect("write");
+            expiry_store
+                .put(&mut writer, 4, &Value::Blob(&[4u8, 2u8, 2u8, 3u8]))
+                .expect("write");
+
+            let mut iter = expiry_store.get(&writer, 1).expect("firstkey");
+
+            assert_eq!(
+                iter.next().expect("firstvalue").expect("ok").1,
+                Value::Blob(&[104u8, 101u8, 108u8, 107u8])
+            );
+            assert_eq!(
+                iter.next().expect("secondvalue").expect("ok").1,
+                Value::Blob(&[104u8, 101u8, 108u8, 108u8])
+            );
+            assert!(iter.next().is_none());
+
+            let mut iter = expiry_store.iter_prev_dup_from(&writer, 4).unwrap();
+
+            let mut sub_iter = iter.next().unwrap().unwrap();
+            assert_eq!(sub_iter.next().expect("first").expect("ok").1, [2, 2, 2, 3]);
+            assert_eq!(
+                sub_iter.next().expect("second").expect("ok").1,
+                [2, 2, 2, 2]
+            );
+            assert!(sub_iter.next().is_none());
+
+            let mut sub_iter2 = iter.next().unwrap().unwrap();
+            assert_eq!(
+                sub_iter2.next().expect("first").expect("ok").1,
+                [104, 101, 108, 108]
+            );
+            assert_eq!(
+                sub_iter2.next().expect("second").expect("ok").1,
+                [104, 101, 108, 107]
+            );
+            assert!(sub_iter2.next().is_none());
+
+            //writer.commit().unwrap();
         }
     }
 

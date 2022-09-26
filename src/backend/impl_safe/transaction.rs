@@ -12,12 +12,12 @@
 use std::{collections::HashMap, sync::Arc};
 
 use super::{
-    snapshot::Snapshot, DatabaseImpl, EnvironmentImpl, ErrorImpl, RoCursorImpl, StatImpl,
-    WriteFlagsImpl,
+    snapshot::Snapshot, DatabaseImpl, EnvironmentImpl, ErrorImpl, RoCursorImpl, RwCursorImpl,
+    StatImpl, WriteFlagsImpl,
 };
 use crate::backend::traits::{
     BackendRoCursorTransaction, BackendRoTransaction, BackendRwCursorTransaction,
-    BackendRwTransaction,
+    BackendRwCursorType, BackendRwDupPrevCursorTransaction, BackendRwTransaction,
 };
 
 #[derive(Debug)]
@@ -60,17 +60,22 @@ impl<'t> BackendRoTransaction for RoTransactionImpl<'t> {
         // noop
     }
 
-    fn stat(&self, db: &Self::Database) -> Result<Self::Stat, Self::Error> {
-        Err(ErrorImpl::DbNotFoundError)
+    fn stat(&self, _db: &Self::Database) -> Result<Self::Stat, Self::Error> {
+        unimplemented!()
     }
 }
 
 impl<'t> BackendRoCursorTransaction<'t> for RoTransactionImpl<'t> {
     type RoCursor = RoCursorImpl<'t>;
+    type RwCursor = RwCursorImpl<'t>;
 
     fn open_ro_cursor(&'t self, db: &Self::Database) -> Result<Self::RoCursor, Self::Error> {
         let snapshot = self.snapshots.get(db).ok_or(ErrorImpl::DbIsForeignError)?;
         Ok(RoCursorImpl(snapshot))
+    }
+
+    fn open_ro_dup_cursor(&'t self, _db: &Self::Database) -> Result<Self::RwCursor, Self::Error> {
+        unimplemented!()
     }
 }
 
@@ -111,8 +116,8 @@ impl<'t> BackendRwTransaction for RwTransactionImpl<'t> {
         snapshot.get(key).ok_or(ErrorImpl::KeyValuePairNotFound)
     }
 
-    fn stat(&self, db: &Self::Database) -> Result<Self::Stat, Self::Error> {
-        Err(ErrorImpl::DbNotFoundError)
+    fn stat(&self, _db: &Self::Database) -> Result<Self::Stat, Self::Error> {
+        unimplemented!()
     }
 
     #[cfg(not(feature = "db-dup-sort"))]
@@ -211,9 +216,31 @@ impl<'t> BackendRwTransaction for RwTransactionImpl<'t> {
 
 impl<'t> BackendRwCursorTransaction<'t> for RwTransactionImpl<'t> {
     type RoCursor = RoCursorImpl<'t>;
+    type RwCursor = RwCursorImpl<'t>;
 
     fn open_ro_cursor(&'t self, db: &Self::Database) -> Result<Self::RoCursor, Self::Error> {
         let snapshot = self.snapshots.get(db).ok_or(ErrorImpl::DbIsForeignError)?;
         Ok(RoCursorImpl(snapshot))
     }
+
+    fn open_ro_dup_cursor(&'t self, _db: &Self::Database) -> Result<Self::RwCursor, Self::Error> {
+        unimplemented!()
+    }
+}
+
+pub enum BackendRwCursorFamily {}
+
+impl<'t> BackendRwCursorType<'t> for BackendRwCursorFamily {
+    type Type = RwCursorImpl<'t>;
+}
+
+impl BackendRwDupPrevCursorTransaction for RwTransactionImpl<'_> {
+    type RwCursor = BackendRwCursorFamily;
+
+    // fn open_rw_dup_prev_cursor<'c>(
+    //     &mut self,
+    //     db: &Self::Database,
+    // ) -> Result<RwCursorImpl<'c>, Self::Error> {
+    //     Err(ErrorImpl::DbNotFoundError)
+    // }
 }

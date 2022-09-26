@@ -11,7 +11,7 @@
 use crate::{
     backend::{
         BackendDatabase, BackendRoCursor, BackendRoCursorTransaction, BackendRoTransaction,
-        BackendRwCursorTransaction, BackendRwTransaction, BackendStat,
+        BackendRwCursor, BackendRwCursorTransaction, BackendRwTransaction, BackendStat,
     },
     error::StoreError,
     helpers::read_transform,
@@ -24,6 +24,7 @@ pub struct Writer<T>(T);
 pub trait Readable<'r> {
     type Database: BackendDatabase;
     type RoCursor: BackendRoCursor<'r>;
+    type RwCursor: BackendRwCursor<'r>;
     type Stat: BackendStat;
 
     fn get<K>(&'r self, db: &Self::Database, k: &K) -> Result<Option<Value<'r>>, StoreError>
@@ -31,6 +32,8 @@ pub trait Readable<'r> {
         K: AsRef<[u8]>;
 
     fn open_ro_cursor(&'r self, db: &Self::Database) -> Result<Self::RoCursor, StoreError>;
+
+    fn open_ro_dup_cursor(&'r self, db: &Self::Database) -> Result<Self::RwCursor, StoreError>;
 
     fn stat(&'r self, db: &Self::Database) -> Result<Self::Stat, StoreError>;
 }
@@ -41,6 +44,7 @@ where
 {
     type Database = T::Database;
     type RoCursor = T::RoCursor;
+    type RwCursor = T::RwCursor;
     type Stat = T::Stat;
 
     fn get<K>(&'r self, db: &T::Database, k: &K) -> Result<Option<Value<'r>>, StoreError>
@@ -56,6 +60,10 @@ where
 
     fn open_ro_cursor(&'r self, db: &T::Database) -> Result<T::RoCursor, StoreError> {
         self.0.open_ro_cursor(db).map_err(|e| e.into())
+    }
+
+    fn open_ro_dup_cursor(&'r self, db: &T::Database) -> Result<T::RwCursor, StoreError> {
+        self.0.open_ro_dup_cursor(db).map_err(|e| e.into())
     }
 
     fn stat(&'r self, db: &Self::Database) -> Result<Self::Stat, StoreError> {
@@ -84,6 +92,7 @@ where
 {
     type Database = T::Database;
     type RoCursor = T::RoCursor;
+    type RwCursor = T::RwCursor;
     type Stat = T::Stat;
 
     fn get<K>(&'r self, db: &T::Database, k: &K) -> Result<Option<Value<'r>>, StoreError>
@@ -99,6 +108,10 @@ where
 
     fn open_ro_cursor(&'r self, db: &T::Database) -> Result<T::RoCursor, StoreError> {
         self.0.open_ro_cursor(db).map_err(|e| e.into())
+    }
+
+    fn open_ro_dup_cursor(&'r self, db: &T::Database) -> Result<T::RwCursor, StoreError> {
+        self.0.open_ro_dup_cursor(db).map_err(|e| e.into())
     }
 
     fn stat(&'r self, db: &Self::Database) -> Result<Self::Stat, StoreError> {

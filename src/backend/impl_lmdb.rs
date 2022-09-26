@@ -29,6 +29,6 @@ pub use environment::{EnvironmentBuilderImpl, EnvironmentImpl};
 pub use error::ErrorImpl;
 pub use flags::{DatabaseFlagsImpl, EnvironmentFlagsImpl, WriteFlagsImpl};
 pub use info::InfoImpl;
-pub use iter::IterImpl;
+pub use iter::{IterDupImpl, IterImpl};
 pub use stat::StatImpl;
 pub use transaction::{RoTransactionImpl, RwTransactionImpl};

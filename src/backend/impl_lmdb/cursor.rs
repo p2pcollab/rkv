@@ -10,8 +10,8 @@
 
 use lmdb::Cursor;
 
-use super::IterImpl;
-use crate::backend::traits::BackendRoCursor;
+use super::{IterDupImpl, IterImpl};
+use crate::backend::traits::{BackendRoCursor, BackendRwCursor};
 
 #[derive(Debug)]
 pub struct RoCursorImpl<'c>(pub(crate) lmdb::RoCursor<'c>);
@@ -41,16 +41,20 @@ impl<'c> BackendRoCursor<'c> for RoCursorImpl<'c> {
     {
         IterImpl::new(self.0, |cursor| cursor.iter_dup_of(key))
     }
+
+    fn into_iter_prev(self) -> Self::Iter {
+        IterImpl::new(self.0, lmdb::RoCursor::iter_prev)
+    }
 }
 
 #[derive(Debug)]
-pub struct RwCursorImpl<'c>(pub(crate) lmdb::RwCursor<'c>);
+pub struct RwCursorImpl<'c>(pub(crate) lmdb::RoCursor<'c>);
 
 impl<'c> BackendRoCursor<'c> for RwCursorImpl<'c> {
-    type Iter = IterImpl<'c, lmdb::RwCursor<'c>>;
+    type Iter = IterImpl<'c, lmdb::RoCursor<'c>>;
 
     fn into_iter(self) -> Self::Iter {
-        IterImpl::new(self.0, lmdb::RwCursor::iter)
+        IterImpl::new(self.0, lmdb::RoCursor::iter)
     }
 
     fn into_iter_from<K>(self, key: K) -> Self::Iter
@@ -65,5 +69,20 @@ impl<'c> BackendRoCursor<'c> for RwCursorImpl<'c> {
         K: AsRef<[u8]> + 'c,
     {
         IterImpl::new(self.0, |cursor| cursor.iter_dup_of(key))
+    }
+
+    fn into_iter_prev(self) -> Self::Iter {
+        IterImpl::new(self.0, lmdb::RoCursor::iter_prev)
+    }
+}
+
+impl<'c> BackendRwCursor<'c> for RwCursorImpl<'c> {
+    type Iter = IterDupImpl<'c, lmdb::RoCursor<'c>>;
+
+    fn into_iter_prev_dup_from<K>(self, key: K) -> Self::Iter
+    where
+        K: AsRef<[u8]> + 'c,
+    {
+        IterDupImpl::new(self.0, |cursor| cursor.iter_prev_dup_from(key))
     }
 }

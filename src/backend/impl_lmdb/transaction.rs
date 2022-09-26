@@ -10,10 +10,10 @@
 
 use lmdb::Transaction;
 
-use super::{DatabaseImpl, ErrorImpl, RoCursorImpl, StatImpl, WriteFlagsImpl};
+use super::{DatabaseImpl, ErrorImpl, RoCursorImpl, RwCursorImpl, StatImpl, WriteFlagsImpl};
 use crate::backend::traits::{
     BackendRoCursorTransaction, BackendRoTransaction, BackendRwCursorTransaction,
-    BackendRwTransaction,
+    BackendRwCursorType, BackendRwDupPrevCursorTransaction, BackendRwTransaction,
 };
 
 #[derive(Debug)]
@@ -33,7 +33,6 @@ impl<'t> BackendRoTransaction for RoTransactionImpl<'t> {
     }
 
     fn stat(&self, db: &Self::Database) -> Result<Self::Stat, Self::Error> {
-        //Err(ErrorImpl::LmdbError(lmdb::Error::Invalid))
         self.0
             .stat(db.0)
             .map(StatImpl)
@@ -43,11 +42,38 @@ impl<'t> BackendRoTransaction for RoTransactionImpl<'t> {
 
 impl<'t> BackendRoCursorTransaction<'t> for RoTransactionImpl<'t> {
     type RoCursor = RoCursorImpl<'t>;
+    type RwCursor = RwCursorImpl<'t>;
 
     fn open_ro_cursor(&'t self, db: &Self::Database) -> Result<Self::RoCursor, Self::Error> {
         self.0
             .open_ro_cursor(db.0)
             .map(RoCursorImpl)
+            .map_err(ErrorImpl::LmdbError)
+    }
+
+    fn open_ro_dup_cursor(&'t self, db: &Self::Database) -> Result<Self::RwCursor, Self::Error> {
+        self.0
+            .open_ro_cursor(db.0)
+            .map(RwCursorImpl)
+            .map_err(ErrorImpl::LmdbError)
+    }
+}
+
+impl<'t> BackendRwCursorTransaction<'t> for RwTransactionImpl<'t> {
+    type RoCursor = RoCursorImpl<'t>;
+    type RwCursor = RwCursorImpl<'t>;
+
+    fn open_ro_cursor(&'t self, db: &Self::Database) -> Result<Self::RoCursor, Self::Error> {
+        self.0
+            .open_ro_cursor(db.0)
+            .map(RoCursorImpl)
+            .map_err(ErrorImpl::LmdbError)
+    }
+
+    fn open_ro_dup_cursor(&'t self, db: &Self::Database) -> Result<Self::RwCursor, Self::Error> {
+        self.0
+            .open_ro_cursor(db.0)
+            .map(RwCursorImpl)
             .map_err(ErrorImpl::LmdbError)
     }
 }
@@ -113,13 +139,22 @@ impl<'t> BackendRwTransaction for RwTransactionImpl<'t> {
     }
 }
 
-impl<'t> BackendRwCursorTransaction<'t> for RwTransactionImpl<'t> {
-    type RoCursor = RoCursorImpl<'t>;
+pub enum BackendRwCursorFamily {}
 
-    fn open_ro_cursor(&'t self, db: &Self::Database) -> Result<Self::RoCursor, Self::Error> {
-        self.0
-            .open_ro_cursor(db.0)
-            .map(RoCursorImpl)
-            .map_err(ErrorImpl::LmdbError)
-    }
+impl<'t> BackendRwCursorType<'t> for BackendRwCursorFamily {
+    type Type = RwCursorImpl<'t>;
+}
+
+impl<'t> BackendRwDupPrevCursorTransaction for RwTransactionImpl<'t> {
+    type RwCursor = BackendRwCursorFamily;
+
+    // fn open_rw_dup_prev_cursor<'a>(
+    //     &mut self,
+    //     db: &Self::Database,
+    // ) -> Result<RwCursorImpl<'a>, Self::Error> {
+    //     self.0
+    //         .open_rw_cursor(db.0)
+    //         .map(RwCursorImpl)
+    //         .map_err(ErrorImpl::LmdbError)
+    // }
 }

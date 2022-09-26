@@ -8,8 +8,8 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use super::{snapshot::Snapshot, IterImpl};
-use crate::backend::traits::BackendRoCursor;
+use super::{snapshot::Snapshot, IterDupImpl, IterImpl};
+use crate::backend::traits::{BackendRoCursor, BackendRwCursor};
 
 #[derive(Debug)]
 pub struct RoCursorImpl<'c>(pub(crate) &'c Snapshot);
@@ -38,6 +38,10 @@ impl<'c> BackendRoCursor<'c> for RoCursorImpl<'c> {
         IterImpl(Box::new(
             self.0.iter().filter(move |&(k, _)| k == key.as_ref()),
         ))
+    }
+
+    fn into_iter_prev(self) -> Self::Iter {
+        unimplemented!()
     }
 }
 
@@ -70,6 +74,10 @@ impl<'c> BackendRoCursor<'c> for RoCursorImpl<'c> {
         let flattened = filtered.flat_map(|(key, values)| values.map(move |value| (key, value)));
         IterImpl(Box::new(flattened))
     }
+
+    fn into_iter_prev(self) -> Self::Iter {
+        unimplemented!()
+    }
 }
 
 #[derive(Debug)]
@@ -90,6 +98,21 @@ impl<'c> BackendRoCursor<'c> for RwCursorImpl<'c> {
     }
 
     fn into_iter_dup_of<K>(self, _key: K) -> Self::Iter
+    where
+        K: AsRef<[u8]> + 'c,
+    {
+        unimplemented!()
+    }
+
+    fn into_iter_prev(self) -> Self::Iter {
+        unimplemented!()
+    }
+}
+
+impl<'c> BackendRwCursor<'c> for RwCursorImpl<'c> {
+    type Iter = IterDupImpl<'c>;
+
+    fn into_iter_prev_dup_from<K>(self, _key: K) -> Self::Iter
     where
         K: AsRef<[u8]> + 'c,
     {

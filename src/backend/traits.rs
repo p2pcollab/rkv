@@ -181,14 +181,32 @@ pub trait BackendRwTransaction: Debug {
 
 pub trait BackendRoCursorTransaction<'t>: BackendRoTransaction {
     type RoCursor: BackendRoCursor<'t>;
+    type RwCursor: BackendRwCursor<'t>;
 
     fn open_ro_cursor(&'t self, db: &Self::Database) -> Result<Self::RoCursor, Self::Error>;
+
+    fn open_ro_dup_cursor(&'t self, db: &Self::Database) -> Result<Self::RwCursor, Self::Error>;
 }
 
 pub trait BackendRwCursorTransaction<'t>: BackendRwTransaction {
     type RoCursor: BackendRoCursor<'t>;
-
+    type RwCursor: BackendRwCursor<'t>;
     fn open_ro_cursor(&'t self, db: &Self::Database) -> Result<Self::RoCursor, Self::Error>;
+
+    fn open_ro_dup_cursor(&'t self, db: &Self::Database) -> Result<Self::RwCursor, Self::Error>;
+}
+
+pub trait BackendRwCursorType<'t> {
+    type Type;
+}
+
+pub trait BackendRwDupPrevCursorTransaction: BackendRwTransaction {
+    type RwCursor: for<'t> BackendRwCursorType<'t>;
+
+    // fn open_rw_dup_prev_cursor<'t>(
+    //     &mut self,
+    //     db: &Self::Database,
+    // ) -> Result<<Self::RwCursor as BackendRwCursorType<'t>>::Type, Self::Error>;
 }
 
 pub trait BackendRoCursor<'c>: Debug {
@@ -203,6 +221,16 @@ pub trait BackendRoCursor<'c>: Debug {
     fn into_iter_dup_of<K>(self, key: K) -> Self::Iter
     where
         K: AsRef<[u8]> + 'c;
+
+    fn into_iter_prev(self) -> Self::Iter;
+}
+
+pub trait BackendRwCursor<'c>: Debug {
+    type Iter: BackendDupIter<'c>;
+
+    fn into_iter_prev_dup_from<K>(self, key: K) -> Self::Iter
+    where
+        K: AsRef<[u8]> + 'c;
 }
 
 pub trait BackendIter<'i> {
@@ -210,4 +238,12 @@ pub trait BackendIter<'i> {
 
     #[allow(clippy::type_complexity)]
     fn next(&mut self) -> Option<Result<(&'i [u8], &'i [u8]), Self::Error>>;
+}
+
+pub trait BackendDupIter<'i> {
+    type Error: BackendError;
+    type Iter: BackendIter<'i>;
+
+    #[allow(clippy::type_complexity)]
+    fn next(&mut self) -> Option<Result<Self::Iter, Self::Error>>;
 }
