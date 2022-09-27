@@ -75,6 +75,15 @@ where
         self.inner.get_first(reader, Key::new(&k)?)
     }
 
+    pub fn iter_start<'r, R, I, C>(&self, reader: &'r R) -> Result<Iter<'r, I>, StoreError>
+    where
+        R: Readable<'r, Database = D, RoCursor = C>,
+        I: BackendIter<'r>,
+        C: BackendRoCursor<'r, Iter = I>,
+    {
+        self.inner.iter_start(reader)
+    }
+
     pub fn put<T>(&self, writer: &mut Writer<T>, k: K, v: &Value) -> EmptyResult
     where
         T: BackendRwTransaction<Database = D>,

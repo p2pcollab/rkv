@@ -94,6 +94,21 @@ where
         reader.get(&self.db, &k)
     }
 
+    pub fn iter_start<'r, R, I, C>(&self, reader: &'r R) -> Result<Iter<'r, I>, StoreError>
+    where
+        R: Readable<'r, Database = D, RoCursor = C>,
+        I: BackendIter<'r>,
+        C: BackendRoCursor<'r, Iter = I>,
+    {
+        let cursor = reader.open_ro_cursor(&self.db)?;
+        let iter = cursor.into_iter();
+
+        Ok(Iter {
+            iter,
+            phantom: PhantomData,
+        })
+    }
+
     /// Insert a value at the specified key.
     /// This put will allow duplicate entries.  If you wish to have duplicate entries
     /// rejected, use the `put_with_flags` function and specify NO_DUP_DATA
