@@ -39,7 +39,7 @@ use crate::store::keys::PrimitiveInt;
 #[cfg(all(feature = "db-dup-sort", feature = "db-int-key"))]
 use crate::store::integermulti::MultiIntegerStore;
 
-pub static DEFAULT_MAX_DBS: c_uint = 5;
+pub static DEFAULT_MAX_DBS: c_uint = 10;
 
 /// Wrapper around an `Environment` (e.g. such as an `LMDB` or `SafeMode` environment).
 #[derive(Debug)]
