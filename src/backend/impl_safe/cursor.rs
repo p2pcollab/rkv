@@ -18,7 +18,7 @@ pub struct RoCursorImpl<'c>(pub(crate) &'c Snapshot);
 impl<'c> BackendRoCursor<'c> for RoCursorImpl<'c> {
     type Iter = IterImpl<'c>;
 
-    fn get_key_value<K>(self, key: K, value: crate::value::Value) -> bool {
+    fn get_key_value<K>(self, key: K, value: &crate::value::Value) -> bool {
         unimplemented!();
     }
 
@@ -53,7 +53,7 @@ impl<'c> BackendRoCursor<'c> for RoCursorImpl<'c> {
 impl<'c> BackendRoCursor<'c> for RoCursorImpl<'c> {
     type Iter = IterImpl<'c>;
 
-    fn get_key_value<K>(self, key: K, value: crate::value::Value) -> bool
+    fn get_key_value<K>(self, key: K, value: &crate::value::Value) -> bool
     where
         K: AsRef<[u8]> + 'c,
     {
@@ -97,7 +97,7 @@ pub struct RwCursorImpl<'c>(&'c mut Snapshot);
 impl<'c> BackendRoCursor<'c> for RwCursorImpl<'c> {
     type Iter = IterImpl<'c>;
 
-    fn get_key_value<K>(self, key: K, value: crate::value::Value) -> bool
+    fn get_key_value<K>(self, key: K, value: &crate::value::Value) -> bool
     where
         K: AsRef<[u8]> + 'c,
     {

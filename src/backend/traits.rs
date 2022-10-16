@@ -212,7 +212,7 @@ pub trait BackendRwDupPrevCursorTransaction: BackendRwTransaction {
 pub trait BackendRoCursor<'c>: Debug {
     type Iter: BackendIter<'c>;
 
-    fn get_key_value<K>(self, key: K, value: crate::value::Value) -> bool
+    fn get_key_value<K>(self, key: K, value: &crate::value::Value) -> bool
     where
         K: AsRef<[u8]> + 'c;
 

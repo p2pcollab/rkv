@@ -91,7 +91,7 @@ where
         &self,
         reader: &'r R,
         k: K,
-        v: Value,
+        v: &Value,
     ) -> Result<bool, StoreError>
     where
         R: Readable<'r, Database = D, RoCursor = C>,

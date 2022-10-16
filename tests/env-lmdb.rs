@@ -1201,17 +1201,17 @@ fn test_multi_get_key_value() {
     let reader = k.read().unwrap();
 
     let yes = sk
-        .get_key_value(&reader, "foo", Value::Blob(b"1234"))
+        .get_key_value(&reader, "foo", &Value::Blob(b"1234"))
         .unwrap();
     assert!(yes);
 
     let yes = sk
-        .get_key_value(&reader, "foo", Value::Blob(b"12345"))
+        .get_key_value(&reader, "foo", &Value::Blob(b"12345"))
         .unwrap();
     assert!(!yes);
 
     let yes = sk
-        .get_key_value(&reader, "foo2", Value::Blob(b"1234"))
+        .get_key_value(&reader, "foo2", &Value::Blob(b"1234"))
         .unwrap();
     assert!(!yes);
 }
