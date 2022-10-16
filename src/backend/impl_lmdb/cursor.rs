@@ -19,6 +19,21 @@ pub struct RoCursorImpl<'c>(pub(crate) lmdb::RoCursor<'c>);
 impl<'c> BackendRoCursor<'c> for RoCursorImpl<'c> {
     type Iter = IterImpl<'c, lmdb::RoCursor<'c>>;
 
+    fn get_key_value<K>(self, key: K, value: crate::value::Value) -> bool
+    where
+        K: AsRef<[u8]> + 'c,
+    {
+        match self.0.get(
+            Some(key.as_ref()),
+            Some(&value.to_bytes().unwrap()),
+            lmdb::MDB_GET_BOTH,
+        ) {
+            Err(e) => false,
+            Ok((Some(k), _)) => true,
+            Ok((None, _)) => true,
+        }
+    }
+
     fn into_iter(self) -> Self::Iter {
         // We call RoCursor.iter() instead of RoCursor.iter_start() because
         // the latter panics when there are no items in the store, whereas the
@@ -52,6 +67,21 @@ pub struct RwCursorImpl<'c>(pub(crate) lmdb::RoCursor<'c>);
 
 impl<'c> BackendRoCursor<'c> for RwCursorImpl<'c> {
     type Iter = IterImpl<'c, lmdb::RoCursor<'c>>;
+
+    fn get_key_value<K>(self, key: K, value: crate::value::Value) -> bool
+    where
+        K: AsRef<[u8]> + 'c,
+    {
+        match self.0.get(
+            Some(key.as_ref()),
+            Some(&value.to_bytes().unwrap()),
+            lmdb::MDB_GET_BOTH,
+        ) {
+            Err(e) => false,
+            Ok((Some(k), _)) => true,
+            Ok((None, _)) => false,
+        }
+    }
 
     fn into_iter(self) -> Self::Iter {
         IterImpl::new(self.0, lmdb::RoCursor::iter)

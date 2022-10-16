@@ -1175,6 +1175,48 @@ fn test_set_map_size() {
 }
 
 #[test]
+fn test_multi_get_key_value() {
+    let root = Builder::new()
+        .prefix("test_iter")
+        .tempdir()
+        .expect("tempdir");
+    fs::create_dir_all(root.path()).expect("dir created");
+
+    let k = Rkv::new::<Lmdb>(root.path()).expect("new succeeded");
+    let sk = k.open_multi("sk", StoreOptions::create()).expect("opened");
+
+    // An iterator over an empty store returns no values.
+    {
+        let reader = k.read().unwrap();
+        let mut iter = sk.iter_start(&reader).unwrap();
+        assert!(iter.next().is_none());
+    }
+
+    let mut writer = k.write().expect("writer");
+    sk.put(&mut writer, "foo", &Value::Blob(b"1234"))
+        .expect("blob 1234");
+
+    writer.commit().expect("committed");
+
+    let reader = k.read().unwrap();
+
+    let yes = sk
+        .get_key_value(&reader, "foo", Value::Blob(b"1234"))
+        .unwrap();
+    assert!(yes);
+
+    let yes = sk
+        .get_key_value(&reader, "foo", Value::Blob(b"12345"))
+        .unwrap();
+    assert!(!yes);
+
+    let yes = sk
+        .get_key_value(&reader, "foo2", Value::Blob(b"1234"))
+        .unwrap();
+    assert!(!yes);
+}
+
+#[test]
 fn test_iter() {
     let root = Builder::new()
         .prefix("test_iter")

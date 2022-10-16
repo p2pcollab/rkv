@@ -85,6 +85,26 @@ where
         })
     }
 
+    /// Provides a cursor to all of the values for the duplicate entries that match this
+    /// key
+    pub fn get_key_value<'r, R, I, C, K>(
+        &self,
+        reader: &'r R,
+        k: K,
+        v: Value,
+    ) -> Result<bool, StoreError>
+    where
+        R: Readable<'r, Database = D, RoCursor = C>,
+        I: BackendIter<'r>,
+        C: BackendRoCursor<'r, Iter = I>,
+        K: AsRef<[u8]> + 'r,
+    {
+        let cursor = reader.open_ro_cursor(&self.db)?;
+        let res = cursor.get_key_value(k, v);
+
+        Ok(res)
+    }
+
     /// Provides the first value that matches this key
     pub fn get_first<'r, R, K>(&self, reader: &'r R, k: K) -> Result<Option<Value<'r>>, StoreError>
     where

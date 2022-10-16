@@ -18,6 +18,10 @@ pub struct RoCursorImpl<'c>(pub(crate) &'c Snapshot);
 impl<'c> BackendRoCursor<'c> for RoCursorImpl<'c> {
     type Iter = IterImpl<'c>;
 
+    fn get_key_value<K>(self, key: K, value: crate::value::Value) -> bool {
+        unimplemented!();
+    }
+
     fn into_iter(self) -> Self::Iter {
         IterImpl(Box::new(self.0.iter()))
     }
@@ -48,6 +52,13 @@ impl<'c> BackendRoCursor<'c> for RoCursorImpl<'c> {
 #[cfg(feature = "db-dup-sort")]
 impl<'c> BackendRoCursor<'c> for RoCursorImpl<'c> {
     type Iter = IterImpl<'c>;
+
+    fn get_key_value<K>(self, key: K, value: crate::value::Value) -> bool
+    where
+        K: AsRef<[u8]> + 'c,
+    {
+        unimplemented!();
+    }
 
     fn into_iter(self) -> Self::Iter {
         let flattened = self
@@ -85,6 +96,13 @@ pub struct RwCursorImpl<'c>(&'c mut Snapshot);
 
 impl<'c> BackendRoCursor<'c> for RwCursorImpl<'c> {
     type Iter = IterImpl<'c>;
+
+    fn get_key_value<K>(self, key: K, value: crate::value::Value) -> bool
+    where
+        K: AsRef<[u8]> + 'c,
+    {
+        unimplemented!();
+    }
 
     fn into_iter(self) -> Self::Iter {
         unimplemented!()
